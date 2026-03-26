@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerPath AI</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--surface-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 33.33%;
+            background: var(--primary);
+            transition: width 0.4s ease;
+        }
+
+        /* Step Transitions */
+        .step {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1, h2 { margin-bottom: 1rem; color: var(--text-main); }
+        p { color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: var(--primary); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: 600;
+        }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { background: var(--border); cursor: not-allowed; }
+
+        /* Assessment specific styles */
+        .question-block {
+            background: var(--bg-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+        .options { display: flex; gap: 1rem; margin-top: 0.5rem; }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        /* Roadmap styles */
+        .phase-card {
+            background: var(--bg-color);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+        }
+        .phase-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+        .duration { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+        ul { padding-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted); }
+        .tips-section { background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--primary); }
+
+        .loader {
+            display: none;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { color: #ef4444; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="step1" class="step active">
+            <h2>What is your career goal?</h2>
+            <p>Enter the role you want to transition into (e.g., Data Scientist, Frontend Developer, Product Manager).</p>
+            <input type="text" id="careerInput" placeholder="Enter your dream role...">
+            <button onclick="goToStep2()">Next Step</button>
+        </div>
+
+        <div id="step2" class="step">
+            <h2>Skill Assessment</h2>
+            <p>Let's find out where you currently stand.</p>
+            <div id="questionsContainer"></div>
+            <div class="loader" id="questionsLoader"></div>
+            <button onclick="goToStep3()" id="generateBtn" style="display: none;">Generate Roadmap</button>
+            <div class="error" id="assessmentError">Please answer all questions.</div>
+        </div>
+
+        <div id="step3" class="step">
+            <h2>Your Personalized Career Roadmap</h2>
+            <p>Generated by AI based on your specific skill gaps.</p>
+            <div class="loader" id="roadmapLoader"></div>
+            <div id="roadmapContent"></div>
+            <div class="error" id="apiError"></div>
+            <button onclick="location.reload()" style="margin-top: 2rem;">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        let userCareer = "";
+        let currentQuestions = [];
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function switchStep(from, to, progress) {
+            document.getElementById(`step${from}`).classList.remove('active');
+            setTimeout(() => {
+                document.getElementById(`step${to}`).classList.add('active');
+                updateProgress(progress);
+            }, 400); // Matches CSS transition
+        }
+
+        async function goToStep2() {
+            const input = document.getElementById('careerInput').value;
+            if (!input.trim()) return;
+            userCareer = input;
+            
+            switchStep(1, 2, 66);
+            document.getElementById('questionsLoader').style.display = 'block';
+
+            try {
+                const res = await fetch('/api/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ career: userCareer })
+                });
+                const data = await res.json();
+                currentQuestions = data.questions;
+                renderQuestions();
+            } catch (err) {
+                console.error(err);
+                alert("Failed to load questions.");
+            }
+        }
+
+        function renderQuestions() {
+            document.getElementById('questionsLoader').style.display = 'none';
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            currentQuestions.forEach((q, index) => {
+                const block = document.createElement('div');
+                block.className = 'question-block';
+                block.innerHTML = `
+                    <p><strong>${index + 1}.</strong> ${q}</p>
+                    <div class="options">
+                        <label><input type="radio" name="q${index}" value="Yes"> Yes</label>
+                        <label><input type="radio" name="q${index}" value="Partially"> Partially</label>
+                        <label><input type="radio" name="q${index}" value="No"> No</label>
+                    </div>
+                `;
+                container.appendChild(block);
+            });
+            document.getElementById('generateBtn').style.display = 'block';
+        }
+
+        async function goToStep3() {
+            const answers = [];
+            let allAnswered = true;
+
+            currentQuestions.forEach((q, index) => {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                if (selected) {
+                    answers.push({ question: q, answer: selected.value });
+                } else {
+                    allAnswered = false;
+                }
+            });
+
+            if (!allAnswered) {
+                document.getElementById('assessmentError').style.display = 'block';
+                return;
+            }
+            document.getElementById('assessmentError').style.display = 'none';
+
+            switchStep(2, 3, 100);
+            document.getElementById('roadmapLoader').style.display = 'block';
+
+            try {
+                const res = await fetch('/api/roadmap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ career: userCareer, answers: answers })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    renderRoadmap(data);
+                } else {
+                    throw new Error(data.error || "Failed to generate roadmap.");
+                }
+            } catch (err) {
+                document.getElementById('roadmapLoader').style.display = 'none';
+                document.getElementById('apiError').innerText = err.message;
+                document.getElementById('apiError').style.display = 'block';
+            }
+        }
+
+        function renderRoadmap(data) {
+            document.getElementById('roadmapLoader').style.display = 'none';
+            const container = document.getElementById('roadmapContent');
+            let html = '';
+
+            // Render Phases
+            data.phases.forEach(phase => {
+                html += `
+                    <div class="phase-card">
+                        <div class="phase-header">
+                            <h3>${phase.title}</h3>
+                            <span class="duration">${phase.duration}</span>
+                        </div>
+                        <h4>Key Tasks:</h4>
+                        <ul>${phase.tasks.map(t => `<li>${t}</li>`).join('')}</ul>
+                        <h4>Resources to look into:</h4>
+                        <ul>${phase.resources.map(r => `<li>${r}</li>`).join('')}</ul>
+                    </div>
+                `;
+            });
+
+            // Render Expert Tips
+            if (data.expert_tips && data.expert_tips.length > 0) {
+                html += `
+                    <div class="tips-section">
+                        <h3>💡 Expert Tips</h3>
+                        <ul style="margin-top:1rem; margin-bottom:0;">
+                            ${data.expert_tips.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
