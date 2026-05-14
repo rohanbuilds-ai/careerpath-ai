@@ -15,6 +15,7 @@ if api_key:
     genai.configure(api_key=api_key)
 
 # Predefined question banks
+# Predefined question banks
 QUESTIONS_DB = {
     "data scientist": [
         "Are you comfortable writing Python or R code for data analysis?",
@@ -29,6 +30,27 @@ QUESTIONS_DB = {
         "Have you built projects using a frontend framework (React, Vue, Angular)?",
         "Do you understand RESTful APIs and how to fetch data from them?",
         "Are you familiar with version control systems like Git?"
+    ],
+    "cybersecurity analyst": [
+        "Do you understand core networking concepts (TCP/IP, DNS, HTTP)?",
+        "Are you familiar with common vulnerabilities like SQL Injection and XSS?",
+        "Have you used security tools like Wireshark, Nmap, or Metasploit?",
+        "Do you know the basics of cryptography and encryption protocols?",
+        "Are you comfortable working with Linux command-line interfaces?"
+    ],
+    "ai/ml engineer": [
+        "Are you proficient in Python and libraries like NumPy or Pandas?",
+        "Do you understand deep learning architectures (e.g., CNNs, RNNs)?",
+        "Have you built and evaluated models using TensorFlow or PyTorch?",
+        "Do you know how to handle and preprocess large datasets?",
+        "Are you familiar with model deployment and MLOps basics?"
+    ],
+    "cloud architect": [
+        "Do you have hands-on experience with AWS, Azure, or Google Cloud?",
+        "Are you familiar with containerization tools like Docker and Kubernetes?",
+        "Do you understand Infrastructure as Code (IaC) using Terraform or similar?",
+        "Have you designed scalable and highly available system architectures?",
+        "Do you understand cloud security and identity management (IAM)?"
     ],
     "generic": [
         "Do you have formal education or training related to this field?",
@@ -53,6 +75,12 @@ def get_questions():
         questions = QUESTIONS_DB['data scientist']
     elif 'web' in career or 'software' in career or 'developer' in career:
         questions = QUESTIONS_DB['web developer']
+    elif 'cyber' in career or 'security' in career or 'hacker' in career:
+        questions = QUESTIONS_DB['cybersecurity analyst']
+    elif 'ai' in career or 'machine learning' in career or 'ml' in career:
+        questions = QUESTIONS_DB['ai/ml engineer']
+    elif 'cloud' in career or 'architect' in career or 'aws' in career:
+        questions = QUESTIONS_DB['cloud architect']
     else:
         questions = QUESTIONS_DB['generic']
         
