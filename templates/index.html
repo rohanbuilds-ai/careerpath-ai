@@ -140,6 +140,34 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .error { color: #ef4444; margin-top: 1rem; display: none; }
+        /* --- PDF & Print Styles --- */
+        @media print {
+            body { 
+                background-color: white; 
+                color: black; 
+                padding: 0; 
+            }
+            .container { 
+                box-shadow: none; 
+                border: none; 
+                background: white; 
+                color: black;
+                max-width: 100%;
+            }
+            /* Hide UI elements that shouldn't be in the PDF */
+            .progress-container, button, #questionsLoader, #roadmapLoader { 
+                display: none !important; 
+            }
+            /* Make text dark for the PDF */
+            h1, h2, h3, h4, p, ul, li { 
+                color: black !important; 
+            }
+            .phase-card {
+                border-left: 4px solid #3b82f6; /* Blue accent for PDF */
+                background: #f8fafc;
+                page-break-inside: avoid; /* Prevents awkward page cuts */
+            }
+        }
     </style>
 </head>
 <body>
@@ -171,10 +199,13 @@
             <div class="loader" id="roadmapLoader"></div>
             <div id="roadmapContent"></div>
             <div class="error" id="apiError"></div>
-            <button onclick="location.reload()" style="margin-top: 2rem;">Start Over</button>
+            
+            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <button onclick="window.print()" style="background: #10b981;">Download as PDF</button>
+                <button onclick="location.reload()" style="background: var(--border);">Start Over</button>
+            </div>
         </div>
-    </div>
-
+        
     <script>
         let userCareer = "";
         let currentQuestions = [];
